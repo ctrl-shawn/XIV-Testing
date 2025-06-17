@@ -13,19 +13,24 @@ const recipes = {
   },
 };
 
-// List of official FFXIV servers
+// Official FFXIV servers list
 const serverList = [
-  "Adamantoise", "Aegis", "Alexander", "Anima", "Asura", "Atomos",
-  "Bahamut", "Balmung", "Brynhildr", "Cactuar", "Coeurl", "Diabolos",
-  "Durandal", "Excalibur", "Exodus", "Faerie", "Famfrit", "Fenrir",
-  "Hyperion", "Lamia", "Leviathan", "Lich", "Malboro", "Mandragora",
-  "Masamune", "Mateus", "Midgardsormr", "Ifrit", "Ixion", "Goblin",
-  "Jenova", "Kujata", "Moogle", "Odin", "Omega", "Phoenix", "Ragnarok",
-  "Sargatanas", "Shinryu", "Shiva", "Tiamat", "Ultima", "Ultros",
-  "Zalera", "Zeromus"
+  "Adamantoise", "Aegis", "Alexander", "Anima", "Asura", "Atomos", "Bahamut",
+  "Balmung", "Behemoth", "Belias", "Brynhildr", "Cactuar", "Carbuncle",
+  "Cerberus", "Chocobo", "Coeurl", "Diabolos", "Durandal", "Excalibur",
+  "Exodus", "Faerie", "Famfrit", "Fenrir", "Garuda", "Gilgamesh", "Goblin",
+  "Gungnir", "Hades", "Hyperion", "Ifrit", "Ixion", "Jenova", "Kujata",
+  "Lamia", "Leviathan", "Lich", "Louisoix", "Malboro", "Mandragora",
+  "Masamune", "Mateus", "Midgardsormr", "Moogle", "Odin", "Omega", "Pandaemonium",
+  "Phoenix", "Ragnarok", "Ramuh", "Ridill", "Sargatanas", "Shinryu", "Shiva",
+  "Siren", "Tiamat", "Titan", "Tonberry", "Tornado", "Typhon", "Ultima",
+  "Ultros", "Unicorn", "Valefor", "Yojimbo", "Zalera", "Zeromus", "Zodiark"
 ];
+
+// Populate server dropdown in HTML
 function populateServerDropdown() {
-  const serverSelect = document.getElementById("server");
+  const serverSelect = document.getElementById("server-select");
+  if (!serverSelect) return;
   serverList.forEach(server => {
     const option = document.createElement("option");
     option.value = server;
@@ -34,30 +39,30 @@ function populateServerDropdown() {
   });
 }
 
+// Fetch market data for a given item and server
 async function fetchMarketData(itemId, server) {
   const url = `https://universalis.app/api/${server}/${itemId}`;
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`API responded with status ${response.status}`);
-    const data = await response.json();
-    return data;
+    return await response.json();
   } catch (error) {
     console.error(`Error fetching market data for item ${itemId}:`, error);
     return null;
   }
 }
 
+// Calculate total material cost and breakdown
 async function calculateMaterialCost(materials, server) {
   let totalCost = 0;
   const breakdown = [];
-
   for (const material of materials) {
     const data = await fetchMarketData(material.id, server);
     let price = 0;
     if (data && data.listings && data.listings.length > 0) {
       price = data.listings[0].pricePerUnit;
     } else {
-      console.warn(`No market data for material ID ${material.id}`);
+      console.warn(`No listings for material ID ${material.id} on ${server}.`);
     }
     const materialTotal = price * material.amount;
     totalCost += materialTotal;
@@ -68,14 +73,18 @@ async function calculateMaterialCost(materials, server) {
       total: materialTotal
     });
   }
-
   return { totalCost, breakdown };
 }
 
+// Calculate profit and render results
 async function calculateProfit() {
-  const server = document.getElementById("server").value;
-  const itemName = document.getElementById("item-name").value;
+  const server = document.getElementById("server-select")?.value;
+  const itemName = document.getElementById("item-name")?.value;
   const resultDiv = document.getElementById("results");
+  if (!server || !itemName) {
+    resultDiv.textContent = "Please select both a server and an item.";
+    return;
+  }
   resultDiv.innerHTML = "Calculating...";
 
   const recipe = recipes[itemName];
@@ -96,7 +105,6 @@ async function calculateProfit() {
   html += `<p>Market Sell Price: ${sellPrice.toLocaleString()} gil</p>`;
   html += `<p>Total Material Cost: ${totalCost.toLocaleString()} gil</p>`;
   html += `<p><strong>Estimated Profit: ${profit.toLocaleString()} gil</strong></p>`;
-
   html += `<h4>Material Breakdown</h4><ul>`;
   breakdown.forEach(mat => {
     html += `<li>${mat.amount}x ${mat.name} @ ${mat.unitPrice.toLocaleString()} gil = ${mat.total.toLocaleString()} gil</li>`;
@@ -106,6 +114,9 @@ async function calculateProfit() {
   resultDiv.innerHTML = html;
 }
 
+// DOM ready setup
 document.addEventListener("DOMContentLoaded", () => {
   populateServerDropdown();
+  document.getElementById("calculate-btn").addEventListener("click", calculateProfit);
 });
+
