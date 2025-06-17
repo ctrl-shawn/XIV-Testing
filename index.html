@@ -1,26 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FFXIV Craft Profit Tool</title>
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FFXIV Crafting Profit Calculator</title>
+<link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h1>FFXIV Craft Profit Calculator</h1>
-  <label for="server">Server: </label>
-  <input type="text" id="server" value="Cerberus" />
+  <h1>FFXIV Crafting Profit Calculator</h1>
 
-  <label for="item">Select Recipe:</label>
-  <select id="item">
-    <option value="Hingan Cupboard">Hingan Cupboard</option>
-    <option value="Zelkova Lumber">Zelkova Lumber</option>
-    <option value="Ruby Cotton Cloth">Ruby Cotton Cloth</option>
-  </select>
+  <div>
+    <label for="recipe-select">Choose a recipe:</label>
+    <select id="recipe-select">
+      <option value="Hingan Cupboard">Hingan Cupboard</option>
+    </select>
+  </div>
 
-  <button onclick="calculateProfit()">Calculate Profit</button>
+  <button id="calculate-btn">Calculate Profit</button>
 
-  <div id="results"></div>
+  <div id="result"></div>
 
   <script src="script.js"></script>
 </body>
