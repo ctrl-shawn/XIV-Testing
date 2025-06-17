@@ -1,3 +1,18 @@
+// Recipe data with correct XIVAPI item IDs for Hingan Cupboard and materials
+const recipes = {
+  "Hingan Cupboard": {
+    itemId: 20735,
+    materials: [
+      { id: 19927, name: "Persimmon Lumber", amount: 6 },  // Persimmon Lumber
+      { id: 5066, name: "Electrum Ingot", amount: 3 },   // Electrum Ingot
+      { id: 7023, name: "Cobalt Joint Plate", amount: 4 },    // Cobalt Joint Plate
+      { id: 7017, name: "Varnish", amount: 3 },   // Varnish
+      { id: 10, name: "Wind Crystal", amount: 5 },   // Wind Crystal
+      { id: 9, name: "Ice Crystal", amount: 4 }    // Ice Crystal
+    ],
+  },
+};
+
 // List of official FFXIV servers
 const servers = [
   "Adamantoise", "Aegis", "Alexander", "Anima", "Asura", "Atomos",
@@ -9,30 +24,9 @@ const servers = [
   "Sargatanas", "Shinryu", "Shiva", "Tiamat", "Ultima", "Ultros",
   "Zalera", "Zeromus"
 ];
-
-// Recipe data with correct XIVAPI item IDs for Hingan Cupboard and materials
-const recipes = {
-  "Hingan Cupboard": {
-    itemId: 20735,
-    materials: [
-      { id: 19927, amount: 6 },  // Persimmon Lumber
-      { id: 5066, amount: 3 },   // Electrum Ingot
-      { id: 7023, amount: 4 },    // Cobalt Joint Plate
-      { id: 7017, amount: 3 },   // Varnish
-      { id: 10, amount: 5 },   // Wind Crystal
-      { id: 9, amount: 4 }    // Ice Crystal
-    ],
-  },
-};
-
-const serverSelect = document.getElementById("serverSelect");
-const itemSelect = document.getElementById("itemSelect");
-const calculateBtn = document.getElementById("calculateBtn");
-const resultsDiv = document.getElementById("results");
-
-// Populate server dropdown dynamically
-function populateServers() {
-  servers.forEach(server => {
+function populateServerDropdown() {
+  const serverSelect = document.getElementById("server");
+  serverList.forEach(server => {
     const option = document.createElement("option");
     option.value = server;
     option.textContent = server;
@@ -40,88 +34,78 @@ function populateServers() {
   });
 }
 
-// Fetch market data for an item from Universalis API
 async function fetchMarketData(itemId, server) {
   const url = `https://universalis.app/api/${server}/${itemId}`;
   try {
     const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`API responded with status ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`API responded with status ${response.status}`);
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error fetching market data:", error);
+    console.error(`Error fetching market data for item ${itemId}:`, error);
     return null;
   }
 }
 
-// Calculate the total material cost based on current market prices
 async function calculateMaterialCost(materials, server) {
   let totalCost = 0;
+  const breakdown = [];
 
   for (const material of materials) {
     const data = await fetchMarketData(material.id, server);
-    if (!data || !data.listings || data.listings.length === 0) {
-      throw new Error(`No market data for material ID ${material.id} on server ${server}`);
+    let price = 0;
+    if (data && data.listings && data.listings.length > 0) {
+      price = data.listings[0].pricePerUnit;
+    } else {
+      console.warn(`No market data for material ID ${material.id}`);
     }
-
-    // Use the lowest listing price as cost
-    const lowestPrice = Math.min(...data.listings.map(listing => listing.pricePerUnit));
-    totalCost += lowestPrice * material.amount;
+    const materialTotal = price * material.amount;
+    totalCost += materialTotal;
+    breakdown.push({
+      name: material.name,
+      unitPrice: price,
+      amount: material.amount,
+      total: materialTotal
+    });
   }
 
-  return totalCost;
+  return { totalCost, breakdown };
 }
 
-// Calculate profit for crafting and selling the item
 async function calculateProfit() {
-  resultsDiv.textContent = "Calculating...";
-  const server = serverSelect.value;
-  const itemName = itemSelect.value;
+  const server = document.getElementById("server").value;
+  const itemName = document.getElementById("item-name").value;
+  const resultDiv = document.getElementById("results");
+  resultDiv.innerHTML = "Calculating...";
 
-  if (!server) {
-    resultsDiv.textContent = "Please select a server.";
+  const recipe = recipes[itemName];
+  if (!recipe) {
+    resultDiv.innerHTML = "Invalid recipe name.";
     return;
   }
 
-  try {
-    const recipe = recipes[itemName];
-    if (!recipe) {
-      resultsDiv.textContent = "Recipe data not found.";
-      return;
-    }
+  const itemData = await fetchMarketData(recipe.id, server);
+  const sellPrice = (itemData && itemData.listings && itemData.listings[0])
+    ? itemData.listings[0].pricePerUnit
+    : 0;
 
-    // Fetch item market data
-    const itemData = await fetchMarketData(recipe.itemId, server);
-    if (!itemData || !itemData.recentHistory || itemData.recentHistory.length === 0) {
-      resultsDiv.textContent = "No recent sales data for the crafted item.";
-      return;
-    }
+  const { totalCost, breakdown } = await calculateMaterialCost(recipe.materials, server);
+  const profit = sellPrice - totalCost;
 
-    // Use last sale price or average recent price for selling price
-    const lastSale = itemData.recentHistory[itemData.recentHistory.length - 1];
-    const sellPrice = lastSale.pricePerUnit || lastSale.price; 
+  let html = `<h3>Profitability for ${itemName}</h3>`;
+  html += `<p>Market Sell Price: ${sellPrice.toLocaleString()} gil</p>`;
+  html += `<p>Total Material Cost: ${totalCost.toLocaleString()} gil</p>`;
+  html += `<p><strong>Estimated Profit: ${profit.toLocaleString()} gil</strong></p>`;
 
-    // Calculate material cost
-    const materialCost = await calculateMaterialCost(recipe.materials, server);
+  html += `<h4>Material Breakdown</h4><ul>`;
+  breakdown.forEach(mat => {
+    html += `<li>${mat.amount}x ${mat.name} @ ${mat.unitPrice.toLocaleString()} gil = ${mat.total.toLocaleString()} gil</li>`;
+  });
+  html += `</ul>`;
 
-    // Profit per item
-    const profit = sellPrice - materialCost;
-
-    resultsDiv.innerHTML = `
-      <strong>Server:</strong> ${server}<br>
-      <strong>Item:</strong> ${itemName}<br>
-      <strong>Sell Price:</strong> ${sellPrice.toLocaleString()} gil<br>
-      <strong>Material Cost:</strong> ${materialCost.toLocaleString()} gil<br>
-      <strong>Estimated Profit:</strong> ${profit.toLocaleString()} gil
-    `;
-  } catch (error) {
-    resultsDiv.textContent = `Error: ${error.message}`;
-  }
+  resultDiv.innerHTML = html;
 }
 
-// Initial setup
-populateServers();
-
-calculateBtn.addEventListener("click", calculateProfit);
+document.addEventListener("DOMContentLoaded", () => {
+  populateServerDropdown();
+});
