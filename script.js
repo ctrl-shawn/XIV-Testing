@@ -74,7 +74,7 @@ async function calculateProfit() {
 
   try {
     // Fetch crafted item price
-    const craftedItemData = await fetchMarketData(server, recipe.id);
+    const craftedItemData = await fetchMarketData(server, recipe.itemId);
     const craftedPrice = craftedItemData.listings?.[0]?.pricePerUnit || 0;
 
     // Fetch materials cost and build breakdown
@@ -84,9 +84,9 @@ async function calculateProfit() {
     for (const mat of recipe.materials) {
       const matData = await fetchMarketData(server, mat.id);
       const matPrice = matData.listings?.[0]?.pricePerUnit || 0;
-      const matTotal = matPrice * mat.quantity;
+      const matTotal = matPrice * mat.amount;  // <-- use mat.amount here
       totalMaterialCost += matTotal;
-      breakdownHTML += `<li>${mat.name} x${mat.quantity} @ ${matPrice.toLocaleString()} = ${matTotal.toLocaleString()}</li>`;
+      breakdownHTML += `<li>${mat.name} x${mat.amount} @ ${matPrice.toLocaleString()} = ${matTotal.toLocaleString()}</li>`;
     }
     breakdownHTML += "</ul>";
 
