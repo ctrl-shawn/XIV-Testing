@@ -1,25 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>FFXIV Crafting Profit Calculator</title>
-<link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FFXIV Crafting Profit Calculator</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h1>FFXIV Crafting Profit Calculator</h1>
+  <div class="container">
+    <h1>FFXIV Crafting Profit Calculator</h1>
 
-  <label for="serverSelect">Select Server:</label>
-  <select id="serverSelect"></select>
+    <label for="serverSelect">Server:</label>
+    <select id="serverSelect"></select>
 
-  <label for="itemSelect">Select Item:</label>
-  <select id="itemSelect">
-    <option value="Hingan Cupboard">Hingan Cupboard</option>
-  </select>
+    <label for="itemSelect">Item to Craft:</label>
+    <select id="itemSelect"></select>
 
-  <button id="calculateBtn">Calculate Profit</button>
+    <button id="calculateBtn">Calculate Profit</button>
 
-  <div id="results"></div>
+    <div id="result"></div>
+  </div>
 
   <script src="script.js"></script>
 </body>
