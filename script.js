@@ -1,4 +1,4 @@
-// Recipe data with correct XIVAPI item IDs for Hingan Cupboard and materials
+// Data: recipes with item IDs and materials with their IDs and quantities
 const recipes = {
   "Hingan Cupboard": {
     itemId: 20735,
@@ -11,97 +11,99 @@ const recipes = {
       { id: 9, name: "Ice Crystal", amount: 4 }    // Ice Crystal
     ],
   },
+  // Add more recipes as needed
 };
 
-// Official FFXIV servers list
+// List of official FFXIV servers (can be expanded)
 const servers = [
-  "Adamantoise", "Aegis", "Alexander", "Anima", "Asura", "Atomos", "Bahamut", "Balmung", "Behemoth",
-  "Belias", "Brynhildr", "Cactuar", "Carbuncle", "Cerberus", "Chocobo", "Coeurl", "Diabolos",
-  "Durandal", "Excalibur", "Exodus", "Faerie", "Famfrit", "Fenrir", "Garuda", "Gilgamesh",
-  "Goblin", "Gungnir", "Hades", "Hyperion", "Ifrit", "Ixion", "Jenova", "Kujata", "Lamia", "Leviathan",
-  "Lich", "Louisoix", "Malboro", "Mandragora", "Masamune", "Mateus", "Midgardsormr", "Moogle", "Odin",
-  "Omega", "Pandaemonium", "Phoenix", "Ragnarok", "Ramuh", "Ridill", "Sargatanas", "Shinryu", "Shiva",
-  "Siren", "Tiamat", "Titan", "Tonberry", "Typhon", "Ultima", "Ultros", "Unicorn", "Valefor", "Yojimbo",
-  "Zalera", "Zeromus", "Zodiark"
+  "Adamantoise","Aegis","Alexander","Anima","Asura","Atomos","Bahamut","Balmung",
+  "Behemoth","Besaid","Brynhildr","Cactuar","Coeurl","Diabolos","Durandal","Echo",
+  "Faerie","Fenrir","Gilgamesh","Goblin","Jenova","Midgardsormr","Mateus","Moogle",
+  "Odin","Omega","Phantom","Shinryu","Shiva","Tonberry","Typhon","Ultima","Unicorn",
+  "Valefor","Yojimbo","Zalera","Zeromus"
 ];
 
-function populateServerDropdown() {
-  const serverSelect = document.getElementById("serverSelect");
+// Populate datalists for autocomplete
+window.addEventListener("DOMContentLoaded", () => {
+  const serverList = document.getElementById("serverList");
   servers.forEach(server => {
     const option = document.createElement("option");
     option.value = server;
-    option.textContent = server;
-    serverSelect.appendChild(option);
+    serverList.appendChild(option);
   });
-}
 
-function populateItemDropdown() {
-  const itemSelect = document.getElementById("itemSelect");
-  Object.keys(recipes).forEach(itemName => {
+  const recipeList = document.getElementById("recipeList");
+  Object.keys(recipes).forEach(recipeName => {
     const option = document.createElement("option");
-    option.value = itemName;
-    option.textContent = itemName;
-    itemSelect.appendChild(option);
+    option.value = recipeName;
+    recipeList.appendChild(option);
   });
-}
+});
 
-async function fetchMarketData(server, itemID) {
-  const url = `https://universalis.app/api/${server}/${itemID}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`API responded with status ${res.status}`);
-  return res.json();
-}
-
-async function calculateMaterialCost(recipe, server) {
-  let total = 0;
-  const details = [];
-
-  for (const mat of recipe.materials) {
-    try {
-      const data = await fetchMarketData(server, mat.id);
-      const price = data.listings[0]?.pricePerUnit || 0;
-      const cost = price * mat.amount;
-      total += cost;
-      details.push(`${mat.amount}x ${mat.name} @ ${price} gil = ${cost} gil`);
-    } catch (err) {
-      details.push(`Error fetching ${mat.name}`);
+// Fetch market data for a specific item on a server from Universalis API
+async function fetchMarketData(server, itemId) {
+  const url = `https://universalis.app/api/${encodeURIComponent(server)}/${itemId}`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`API responded with status ${response.status}`);
     }
+    return await response.json();
+  } catch (err) {
+    throw new Error(`Error fetching market data: ${err.message}`);
   }
-
-  return { total, details };
 }
 
 async function calculateProfit() {
-  const server = document.getElementById("serverSelect").value;
-  const itemName = document.getElementById("itemSelect").value;
-  const recipe = recipes[itemName];
+  const server = document.getElementById("serverInput").value.trim();
+  const recipeName = document.getElementById("recipeInput").value.trim();
   const resultDiv = document.getElementById("result");
 
-  resultDiv.innerHTML = "Calculating...";
+  resultDiv.innerHTML = ""; // clear previous result
+
+  if (!servers.includes(server)) {
+    resultDiv.innerHTML = `<p style="color:red;">Invalid or unsupported server name.</p>`;
+    return;
+  }
+  if (!recipes[recipeName]) {
+    resultDiv.innerHTML = `<p style="color:red;">Unknown recipe selected.</p>`;
+    return;
+  }
+
+  const recipe = recipes[recipeName];
 
   try {
-    const itemData = await fetchMarketData(server, recipe.id);
-    const avgSalePrice = itemData.listings[0]?.pricePerUnit || 0;
+    // Fetch crafted item price
+    const craftedItemData = await fetchMarketData(server, recipe.id);
+    const craftedPrice = craftedItemData.listings?.[0]?.pricePerUnit || 0;
 
-    const { total: materialCost, details } = await calculateMaterialCost(recipe, server);
-    const profit = avgSalePrice - materialCost;
+    // Fetch materials cost and build breakdown
+    let totalMaterialCost = 0;
+    let breakdownHTML = "<h3>Material Costs:</h3><ul>";
 
+    for (const mat of recipe.materials) {
+      const matData = await fetchMarketData(server, mat.id);
+      const matPrice = matData.listings?.[0]?.pricePerUnit || 0;
+      const matTotal = matPrice * mat.quantity;
+      totalMaterialCost += matTotal;
+      breakdownHTML += `<li>${mat.name} x${mat.quantity} @ ${matPrice.toLocaleString()} = ${matTotal.toLocaleString()}</li>`;
+    }
+    breakdownHTML += "</ul>";
+
+    const profit = craftedPrice - totalMaterialCost;
+
+    // Output results
     resultDiv.innerHTML = `
-      <h2>Results for ${itemName} on ${server}</h2>
-      <p><strong>Market Price:</strong> ${avgSalePrice} gil</p>
-      <p><strong>Material Cost:</strong> ${materialCost} gil</p>
-      <p><strong>Profit:</strong> ${profit} gil</p>
-      <h3>Itemized Material Costs:</h3>
-      <ul>${details.map(d => `<li>${d}</li>`).join("")}</ul>
+      <h2>${recipeName} Profit Calculation</h2>
+      <p><strong>Server:</strong> ${server}</p>
+      <p><strong>Crafted Item Price:</strong> ${craftedPrice.toLocaleString()} gil</p>
+      ${breakdownHTML}
+      <h3>Total Material Cost: ${totalMaterialCost.toLocaleString()} gil</h3>
+      <h3>Estimated Profit: ${profit.toLocaleString()} gil</h3>
     `;
   } catch (err) {
-    resultDiv.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
+    resultDiv.innerHTML = `<p style="color:red;">${err.message}</p>`;
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  populateServerDropdown();
-  populateItemDropdown();
-
-  document.getElementById("calculateBtn").addEventListener("click", calculateProfit);
-});
+document.getElementById("calculateBtn").addEventListener("click", calculateProfit);
