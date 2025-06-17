@@ -88,6 +88,13 @@ async function calculateProfit() {
     const craftedItemData = await fetchMarketData(server, recipe.itemId);
     const craftedPrice = craftedItemData.listings?.[0]?.pricePerUnit || 0;
 
+    // 🧮 Estimate sales velocity from recent history (last 7 days)
+    const sales = craftedItemData.recentHistory || [];
+    const now = Date.now() / 1000;
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60;
+    const recentSales = sales.filter(sale => sale.timestamp >= sevenDaysAgo);
+    const salesPerDay = (recentSales.length / 7).toFixed(2);
+
     // Fetch materials cost and build breakdown
     let totalMaterialCost = 0;
     let breakdownHTML = "<h3>Material Costs:</h3><ul>";
@@ -108,6 +115,7 @@ async function calculateProfit() {
       <h2>${recipeName} Profit Calculation</h2>
       <p><strong>Server:</strong> ${server}</p>
       <p><strong>Crafted Item Price:</strong> ${craftedPrice.toLocaleString()} gil</p>
+      <p><strong>Estimated Sales Per Day:</strong> ${salesPerDay}</p>
       ${breakdownHTML}
       <h3>Total Material Cost: ${totalMaterialCost.toLocaleString()} gil</h3>
       <h3>Estimated Profit: ${profit.toLocaleString()} gil</h3>
