@@ -14,7 +14,7 @@ const recipes = {
 };
 
 // List of official FFXIV servers
-const servers = [
+const serverList = [
   "Adamantoise", "Aegis", "Alexander", "Anima", "Asura", "Atomos",
   "Bahamut", "Balmung", "Brynhildr", "Cactuar", "Coeurl", "Diabolos",
   "Durandal", "Excalibur", "Exodus", "Faerie", "Famfrit", "Fenrir",
