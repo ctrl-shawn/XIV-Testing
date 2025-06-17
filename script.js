@@ -17,10 +17,10 @@ const recipes = {
     materials: [
       { id: 19927, amount: 6 },  // Persimmon Lumber
       { id: 5066, amount: 3 },   // Electrum Ingot
-      { id: 504, amount: 4 },    // Cobalt Joint Plate
-      { id: 5070, amount: 3 },   // Varnish
-      { id: 5072, amount: 5 },   // Wind Crystal
-      { id: 5073, amount: 4 }    // Ice Crystal
+      { id: 7023, amount: 4 },    // Cobalt Joint Plate
+      { id: 7017, amount: 3 },   // Varnish
+      { id: 10, amount: 5 },   // Wind Crystal
+      { id: 9, amount: 4 }    // Ice Crystal
     ],
   },
 };
