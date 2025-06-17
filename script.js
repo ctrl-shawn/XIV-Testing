@@ -11,6 +11,17 @@ const recipes = {
       { id: 9, name: "Ice Crystal", amount: 4 }    // Ice Crystal
     ],
   },
+  "Hingan Bed": {
+    itemId: 20731,
+    materials: [
+      { id: 5372, name: "Pine Lumber", amount: 6 },  
+      { id: 8021, name: "Rush Grass", amount: 2 },   
+      { id: 5328, name: "Undyed Woolen Cloth", amount: 3 },       
+      { id: 5068, name: "Rose Gold Nugget", amount: 2 }, 
+      { id: 10, name: "Wind Crystal", amount: 4 },
+      { id: 9, name: "Ice Crystal", amount: 3 }   
+    ],
+  },  
   // Add more recipes as needed
 };
 
