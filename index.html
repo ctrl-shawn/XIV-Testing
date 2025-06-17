@@ -9,16 +9,17 @@
 <body>
   <h1>FFXIV Crafting Profit Calculator</h1>
 
-  <div>
-    <label for="recipe-select">Choose a recipe:</label>
-    <select id="recipe-select">
-      <option value="Hingan Cupboard">Hingan Cupboard</option>
-    </select>
-  </div>
+  <label for="serverSelect">Select Server:</label>
+  <select id="serverSelect"></select>
 
-  <button id="calculate-btn">Calculate Profit</button>
+  <label for="itemSelect">Select Item:</label>
+  <select id="itemSelect">
+    <option value="Hingan Cupboard">Hingan Cupboard</option>
+  </select>
 
-  <div id="result"></div>
+  <button id="calculateBtn">Calculate Profit</button>
+
+  <div id="results"></div>
 
   <script src="script.js"></script>
 </body>
