@@ -43,8 +43,14 @@ async function calculateMaterialCost(server, ingredients) {
 }
 
 async function calculateProfit() {
-  const server = "Cerberus"; // You can make this dynamic too
-  const recipeName = document.getElementById("recipe-select").value;
+  const server = "Cerberus"; // Change to your server
+  const select = document.getElementById("recipe-select");
+  if (!select) {
+    alert("Recipe selector not found in the document.");
+    return;
+  }
+
+  const recipeName = select.value;
   const recipe = recipes[recipeName];
 
   if (!recipe) {
@@ -53,18 +59,16 @@ async function calculateProfit() {
   }
 
   const itemData = await fetchItemData(server, recipe.id);
-  const materialCost = await calculateMaterialCost(server, recipe.ingredients);
-
-  const profit = itemData.price - materialCost;
-  const velocity = itemData.velocity;
-
-  const resultDiv = document.getElementById("result");
   if (itemData.price === 0) {
-    resultDiv.innerHTML = `⚠️ No current listings found for <b>${recipeName}</b> on server <b>${server}</b>.`;
+    document.getElementById("result").innerHTML = `⚠️ No current listings found for <b>${recipeName}</b> on server <b>${server}</b>.`;
     return;
   }
 
-  resultDiv.innerHTML = `
+  const materialCost = await calculateMaterialCost(server, recipe.ingredients);
+  const profit = itemData.price - materialCost;
+  const velocity = itemData.velocity;
+
+  document.getElementById("result").innerHTML = `
     <h2>${recipeName} Profit Calculation</h2>
     <p>Current Market Price: <b>${itemData.price} gil</b></p>
     <p>Total Material Cost: <b>${materialCost.toFixed(2)} gil</b></p>
@@ -73,4 +77,6 @@ async function calculateProfit() {
   `;
 }
 
-document.getElementById("calculate-btn").addEventListener("click", calculateProfit);
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById("calculate-btn").addEventListener("click", calculateProfit);
+});
