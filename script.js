@@ -1,87 +1,82 @@
 const recipes = {
   "Hingan Cupboard": {
-    id: 18224,
+    id: 20735,
     ingredients: {
-      "Zelkova Lumber": { quantity: 3, id: 17523 },
-      "Ruby Cotton Cloth": { quantity: 2, id: 16924 },
-      "Iron Nails": { quantity: 4, id: 5331 }
-    }
-  },
-  "Zelkova Lumber": {
-    id: 17523,
-    ingredients: {
-      "Zelkova Log": { quantity: 5, id: 12538 },
-      "Larch Resin": { quantity: 1, id: 14144 }
-    }
-  },
-  "Ruby Cotton Cloth": {
-    id: 16924,
-    ingredients: {
-      "Ruby Cotton Boll": { quantity: 3, id: 16734 },
-      "Seawater": { quantity: 1, id: 10335 }
+      "Persimmon Lumber": { quantity: 6, id: 16888 },
+      "Electrum Ingot": { quantity: 3, id: 16852 },
+      "Cobalt Joint Plate": { quantity: 4, id: 16929 },
+      "Varnish": { quantity: 3, id: 17403 },
+      "Wind Crystal": { quantity: 5, id: 12345 },
+      "Ice Crystal": { quantity: 4, id: 12346 }
     }
   }
 };
 
 async function fetchItemData(server, itemId) {
-  const response = await fetch(`https://universalis.app/api/v2/${server}/${itemId}`);
-  const data = await response.json();
-  return {
-    price: data.listings[0]?.pricePerUnit || 0,
-    velocity: data.regularSaleVelocity
-  };
+  try {
+    const response = await fetch(`https://universalis.app/api/v2/${server}/${itemId}`);
+    if (!response.ok) throw new Error("Failed to fetch from Universalis");
+
+    const data = await response.json();
+
+    if (!data.listings || data.listings.length === 0) {
+      throw new Error(`No listings found for item ID ${itemId} on ${server}`);
+    }
+
+    return {
+      price: data.listings[0].pricePerUnit,
+      velocity: data.regularSaleVelocity ?? 0
+    };
+  } catch (error) {
+    console.error("Error fetching data:", error.message);
+    return { price: 0, velocity: 0 };
+  }
 }
 
-async function calculateMaterialCost(server, name, depth = 0) {
-  const recipe = recipes[name];
-  if (!recipe) {
-    const { price } = await fetchItemData(server, name);
-    return price;
+async function calculateMaterialCost(server, ingredients) {
+  let totalCost = 0;
+  for (const [name, { quantity, id }] of Object.entries(ingredients)) {
+    const data = await fetchItemData(server, id);
+    totalCost += data.price * quantity;
   }
-
-  let total = 0;
-  for (const [ingredient, { quantity }] of Object.entries(recipe.ingredients)) {
-    const costPerUnit = await calculateMaterialCost(server, ingredient, depth + 1);
-    total += costPerUnit * quantity;
-  }
-
-  return total;
+  return totalCost;
 }
 
 async function calculateProfit() {
-  const server = document.getElementById("server").value;
-  const itemName = document.getElementById("item").value;
-  const resultDiv = document.getElementById("results");
-  resultDiv.innerHTML = "Loading...";
-
-  const recipe = recipes[itemName];
-  if (!recipe) {
-    resultDiv.innerHTML = `❌ Recipe for "${itemName}" not found.`;
+  const server = "Cerberus"; // Change to your server
+  const select = document.getElementById("recipe-select");
+  if (!select) {
+    alert("Recipe selector not found in the document.");
     return;
   }
 
-  let materialCost = 0;
-  let breakdown = [];
+  const recipeName = select.value;
+  const recipe = recipes[recipeName];
 
-  for (const [ingredient, { quantity }] of Object.entries(recipe.ingredients)) {
-    const costPerUnit = await calculateMaterialCost(server, ingredient);
-    const total = costPerUnit * quantity;
-    materialCost += total;
-    breakdown.push(`${ingredient} (${quantity}x): ${costPerUnit.toLocaleString()} gil`);
+  if (!recipe) {
+    alert("Recipe not found!");
+    return;
   }
 
-  const { price: marketPrice, velocity } = await fetchItemData(server, recipe.id);
-  const profit = marketPrice - materialCost;
-  const roi = ((profit / materialCost) * 100).toFixed(2);
+  const itemData = await fetchItemData(server, recipe.id);
+  if (itemData.price === 0) {
+    document.getElementById("result").innerHTML = `⚠️ No current listings found for <b>${recipeName}</b> on server <b>${server}</b>.`;
+    return;
+  }
 
-  resultDiv.innerHTML = `
-    <h2>${itemName}</h2>
-    <p><strong>Market Price:</strong> ${marketPrice.toLocaleString()} gil</p>
-    <p><strong>Sales per Day:</strong> ${velocity.toFixed(2)}</p>
-    <p><strong>Materials:</strong><br>${breakdown.join("<br>")}</p>
-    <p><strong>Total Cost:</strong> ${materialCost.toLocaleString()} gil</p>
-    <p><strong>Estimated Profit:</strong> ${profit.toLocaleString()} gil</p>
-    <p><strong>ROI:</strong> ${roi}%</p>
-    <p><strong>Recommendation:</strong> ${profit > 0 ? "✅ Craft & Sell" : "❌ Not Worth It"}</p>
+  const materialCost = await calculateMaterialCost(server, recipe.ingredients);
+  const profit = itemData.price - materialCost;
+  const velocity = itemData.velocity;
+
+  document.getElementById("result").innerHTML = `
+    <h2>${recipeName} Profit Calculation</h2>
+    <p>Current Market Price: <b>${itemData.price} gil</b></p>
+    <p>Total Material Cost: <b>${materialCost.toFixed(2)} gil</b></p>
+    <p>Estimated Profit per Item: <b>${profit.toFixed(2)} gil</b></p>
+    <p>Estimated Sales Velocity: <b>${velocity.toFixed(2)} per day</b></p>
   `;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById("calculate-btn").addEventListener("click", calculateProfit);
+});
