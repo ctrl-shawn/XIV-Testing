@@ -29,7 +29,7 @@ const serverList = [
 
 // Populate server dropdown in HTML
 function populateServerDropdown() {
-  const serverSelect = document.getElementById("server-select");
+  const serverSelect = document.getElementById("serverSelect");
   if (!serverSelect) return;
   serverList.forEach(server => {
     const option = document.createElement("option");
@@ -66,20 +66,15 @@ async function calculateMaterialCost(materials, server) {
     }
     const materialTotal = price * material.amount;
     totalCost += materialTotal;
-    breakdown.push({
-      name: material.name,
-      unitPrice: price,
-      amount: material.amount,
-      total: materialTotal
-    });
+    breakdown.push({ name: material.name, unitPrice: price, amount: material.amount, total: materialTotal });
   }
   return { totalCost, breakdown };
 }
 
 // Calculate profit and render results
 async function calculateProfit() {
-  const server = document.getElementById("server-select")?.value;
-  const itemName = document.getElementById("item-name")?.value;
+  const server = document.getElementById("serverSelect")?.value;
+  const itemName = document.getElementById("itemSelect")?.value;
   const resultDiv = document.getElementById("results");
   if (!server || !itemName) {
     resultDiv.textContent = "Please select both a server and an item.";
@@ -117,6 +112,7 @@ async function calculateProfit() {
 // DOM ready setup
 document.addEventListener("DOMContentLoaded", () => {
   populateServerDropdown();
-  document.getElementById("calculate-btn").addEventListener("click", calculateProfit);
+  document.getElementById("calculateBtn").addEventListener("click", calculateProfit);
 });
+
 
